@@ -91,3 +91,8 @@ async def healthz() -> JSONResponse:
         content={"status": status, "checks": checks, "request_id": request_id},
         status_code=status_code,
     )
+
+
+@app.get("/livez")
+async def livez() -> dict[str, str]:
+    return {"status": "ok"}
