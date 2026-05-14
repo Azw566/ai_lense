@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket_name: str = ""
 
+    # Awin affiliate network
+    awin_publisher_id: str = ""
+
     # App
     app_env: str = "development"
     log_level: str = "INFO"

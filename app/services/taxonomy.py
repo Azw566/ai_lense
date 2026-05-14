@@ -126,6 +126,15 @@ class Taxonomy:
         """COCO class id for a canonical category, or None if it has no COCO match."""
         return self._yolo_classes.get(category)
 
+    def alias_map(self, retailer: str) -> dict[str, str]:
+        """Normalized source-category -> canonical category for one retailer.
+
+        Backs `ProductSource.source_category_map`. This is the raw alias table —
+        actual lookups should go through `map_source_category`, which also
+        resolves breadcrumb paths.
+        """
+        return dict(self._alias_index.get(retailer, {}))
+
     @property
     def categories(self) -> list[str]:
         return list(self._yolo_classes)
