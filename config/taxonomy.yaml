@@ -1,0 +1,372 @@
+# Visual Deco Search — canonical category taxonomy (arch §5.3, roadmap P1-T2)
+#
+# This file IS a domain model. Edit it via PR review, never hard-code categories.
+# Each canonical category maps to:
+#   - yolo_class:  the COCO class ID YOLO emits for this object, or null if COCO
+#                  has no equivalent (most soft furnishings / wall deco). null
+#                  categories rely on the no-detection fallback (arch §4.3) until
+#                  YOLO is fine-tuned (V2).
+#   - aliases.awin: source category strings seen in Awin merchant feeds. Matched
+#                   case-insensitively, either against the whole string or the
+#                   last breadcrumb segment (see app/services/taxonomy.py).
+#   - description: free text — the disambiguation rule, used when a product could
+#                  plausibly land in two buckets.
+#
+# Design rules:
+#   - Categories are mutually exclusive: a product belongs to exactly ONE.
+#   - No hyper-specificity: "couch", not "3-seat-corner-sofa".
+#   - Several categories MAY share a yolo_class (COCO has one "dining table" for
+#     all tables) — that is intentional; CLIP ranking disambiguates downstream.
+#
+# COCO class IDs used here: couch=57, chair=56, potted plant=58, bed=59,
+# dining table=60, clock=74, vase=75.
+#
+# Starting list — iterate aliases as real feed mapping rates come in (P1-T3 DoD
+# expects >70% of feed rows to resolve).
+
+version: 1
+
+your_categories:
+
+  # ---- Seating -------------------------------------------------------------
+  couch:
+    yolo_class: 57
+    aliases:
+      awin:
+        - "Sofas"
+        - "Sofa"
+        - "Corner Sofas"
+        - "Sofa Beds"
+        - "2 Seater Sofas"
+        - "3 Seater Sofas"
+        - "Settees"
+    description: >
+      Multi-seat upholstered seating. Anything seating two or more people goes
+      here; single-occupant upholstered seating is "armchair". Sofa beds bucket
+      here (used primarily as seating), not under "bed".
+
+  armchair:
+    yolo_class: 56
+    aliases:
+      awin:
+        - "Armchairs"
+        - "Armchair"
+        - "Accent Chairs"
+        - "Occasional Chairs"
+        - "Recliner Chairs"
+        - "Tub Chairs"
+    description: >
+      Single-occupant upholstered seating with arms, made for lounging. If it
+      has no arms and a hard seat (made for a table), it is "chair".
+
+  chair:
+    yolo_class: 56
+    aliases:
+      awin:
+        - "Chairs"
+        - "Dining Chairs"
+        - "Office Chairs"
+        - "Desk Chairs"
+        - "Bar Stools"
+        - "Stools"
+    description: >
+      Hard-seat single-occupant seating made to pair with a table or desk.
+      Lounge-oriented upholstered seating is "armchair".
+
+  # ---- Tables --------------------------------------------------------------
+  dining_table:
+    yolo_class: 60
+    aliases:
+      awin:
+        - "Dining Tables"
+        - "Dining Table"
+        - "Kitchen Tables"
+        - "Extending Dining Tables"
+    description: >
+      Full-height table for eating. Low tables in front of a sofa are
+      "coffee_table"; small tables beside seating/beds are "side_table".
+
+  coffee_table:
+    yolo_class: 60
+    aliases:
+      awin:
+        - "Coffee Tables"
+        - "Coffee Table"
+        - "Cocktail Tables"
+    description: >
+      Low table placed in front of a sofa. Distinguished from "side_table" by
+      its larger top and central placement.
+
+  side_table:
+    yolo_class: 60
+    aliases:
+      awin:
+        - "Side Tables"
+        - "End Tables"
+        - "Side Tables & End Tables"
+        - "Bedside Tables"
+        - "Nightstands"
+        - "Console Tables"
+    description: >
+      Small table beside a sofa, chair or bed. Larger central low tables are
+      "coffee_table".
+
+  desk:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Desks"
+        - "Desk"
+        - "Office Desks"
+        - "Computer Desks"
+        - "Writing Desks"
+        - "Dressing Tables"
+    description: >
+      Table made for working or writing. Distinguished from "dining_table"
+      (eating) and "side_table" (placement beside seating) by its purpose.
+
+  # ---- Bedroom -------------------------------------------------------------
+  bed:
+    yolo_class: 59
+    aliases:
+      awin:
+        - "Beds"
+        - "Bed Frames"
+        - "Divan Beds"
+        - "Bunk Beds"
+        - "Headboards"
+    description: >
+      Bed frame, divan or headboard. The sleeping surface sold on its own is
+      "mattress".
+
+  mattress:
+    yolo_class: 59
+    aliases:
+      awin:
+        - "Mattresses"
+        - "Mattress"
+        - "Mattress Toppers"
+    description: >
+      The sleeping surface sold separately from a frame.
+
+  wardrobe:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Wardrobes"
+        - "Wardrobe"
+        - "Fitted Wardrobes"
+        - "Sliding Wardrobes"
+    description: >
+      Tall enclosed clothes storage with hanging space. Lower drawer-only units
+      are "dresser".
+
+  dresser:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Chests of Drawers"
+        - "Chest of Drawers"
+        - "Drawers"
+        - "Sideboards"
+        - "Dressers"
+    description: >
+      Low drawer-based storage (chest of drawers, sideboard). Tall hanging
+      storage is "wardrobe"; open-shelf units are "bookshelf".
+
+  # ---- Storage -------------------------------------------------------------
+  bookshelf:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Bookcases"
+        - "Bookcases & Shelving"
+        - "Shelving"
+        - "Shelving Units"
+        - "Wall Shelves"
+    description: >
+      Open-shelf storage / display unit. Enclosed drawer units are "dresser".
+
+  storage_basket:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Storage Baskets"
+        - "Baskets"
+        - "Storage Boxes"
+        - "Storage Bins"
+    description: >
+      Small movable container for soft storage. Furniture-scale storage is
+      "dresser" or "bookshelf".
+
+  tv_unit:
+    yolo_class: null
+    aliases:
+      awin:
+        - "TV Units"
+        - "TV Stands"
+        - "TV Stand"
+        - "TV Cabinets"
+        - "Media Units"
+        - "Entertainment Units"
+    description: >
+      Low media stand/cabinet for a TV and AV gear. Distinguished from
+      "dresser" (bedroom drawer storage) and "bookshelf" (open display).
+
+  # ---- Lighting ------------------------------------------------------------
+  lamp_floor:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Floor Lamps"
+        - "Floor Lamp"
+        - "Standing Lamps"
+        - "Standard Lamps"
+    description: >
+      Free-standing lamp that rests on the floor.
+
+  lamp_table:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Table Lamps"
+        - "Table Lamp"
+        - "Desk Lamps"
+        - "Bedside Lamps"
+    description: >
+      Lamp that sits on a table, desk or nightstand.
+
+  lamp_ceiling:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Ceiling Lights"
+        - "Pendant Lights"
+        - "Chandeliers"
+        - "Ceiling Lamps"
+        - "Pendants"
+    description: >
+      Lamp mounted to or hung from the ceiling.
+
+  # ---- Soft furnishings ----------------------------------------------------
+  rug:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Rugs"
+        - "Rug"
+        - "Area Rugs"
+        - "Floor Rugs"
+        - "Runners"
+    description: >
+      Floor textile laid loose over the floor.
+
+  curtain:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Curtains"
+        - "Curtain"
+        - "Blinds"
+        - "Drapes"
+        - "Curtains & Blinds"
+    description: >
+      Window textile or blind.
+
+  cushion:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Cushions"
+        - "Cushion"
+        - "Scatter Cushions"
+        - "Cushion Covers"
+        - "Pillows"
+    description: >
+      Decorative pillow for seating or beds. Larger textiles draped over
+      furniture are "throw".
+
+  throw:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Throws"
+        - "Throw"
+        - "Throws & Blankets"
+        - "Blankets"
+        - "Bedspreads"
+    description: >
+      Loose blanket draped over a sofa or bed for decoration. Small pillows are
+      "cushion".
+
+  # ---- Wall & decor --------------------------------------------------------
+  mirror:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Mirrors"
+        - "Mirror"
+        - "Wall Mirrors"
+        - "Floor Mirrors"
+    description: >
+      Any decorative mirror, wall-mounted or free-standing.
+
+  wall_art:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Wall Art"
+        - "Wall Art & Prints"
+        - "Prints"
+        - "Posters"
+        - "Canvas Prints"
+        - "Paintings"
+        - "Framed Art"
+    description: >
+      Flat decorative wall hanging — print, poster, canvas, framed art.
+
+  clock:
+    yolo_class: 74
+    aliases:
+      awin:
+        - "Clocks"
+        - "Clock"
+        - "Wall Clocks"
+        - "Mantel Clocks"
+    description: >
+      Any decorative clock.
+
+  vase:
+    yolo_class: 75
+    aliases:
+      awin:
+        - "Vases"
+        - "Vase"
+        - "Bud Vases"
+    description: >
+      Vessel for flowers. Decorative containers holding live plants are
+      "plant_pot".
+
+  plant_pot:
+    yolo_class: 58
+    aliases:
+      awin:
+        - "Plant Pots"
+        - "Plant Pots & Planters"
+        - "Planters"
+        - "Pots & Planters"
+        - "Indoor Planters"
+    description: >
+      Container for a live plant. Vessels for cut flowers are "vase".
+
+  candle:
+    yolo_class: null
+    aliases:
+      awin:
+        - "Candles"
+        - "Candle"
+        - "Candles & Holders"
+        - "Candle Holders"
+        - "Lanterns"
+    description: >
+      Decorative candle or candle holder.
