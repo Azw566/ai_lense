@@ -34,6 +34,11 @@ from app.db.base import Base
 # JSONB on Postgres, plain JSON elsewhere (SQLite test runs).
 JsonB = JSON().with_variant(JSONB(), "postgresql")
 
+# Postgres can autoincrement a BIGINT primary key; SQLite only does so on
+# `INTEGER PRIMARY KEY`. The variant lets the same column declaration work on
+# both, keeping unit tests fast (in-memory SQLite) and prod schemas roomy.
+AutoBigInt = BigInteger().with_variant(Integer(), "sqlite")
+
 
 class Product(Base):
     """A normalized catalog product. Unique per (retailer, retailer_product_id)."""
@@ -74,7 +79,7 @@ class IndexingRun(Base):
 
     __tablename__ = "indexing_runs"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(AutoBigInt, primary_key=True, autoincrement=True)
     source: Mapped[str] = mapped_column(String(64))
     started_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
