@@ -45,9 +45,7 @@ class Product(Base):
 
     __tablename__ = "products"
     __table_args__ = (
-        UniqueConstraint(
-            "retailer", "retailer_product_id", name="uq_products_retailer_product"
-        ),
+        UniqueConstraint("retailer", "retailer_product_id", name="uq_products_retailer_product"),
         Index("ix_products_retailer_product_id", "retailer_product_id"),
         Index("ix_products_category", "category"),
     )
@@ -63,9 +61,7 @@ class Product(Base):
     image_url: Mapped[str] = mapped_column(Text)
     product_url: Mapped[str] = mapped_column(Text)
     raw_payload: Mapped[dict] = mapped_column(JsonB)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -81,12 +77,8 @@ class IndexingRun(Base):
 
     id: Mapped[int] = mapped_column(AutoBigInt, primary_key=True, autoincrement=True)
     source: Mapped[str] = mapped_column(String(64))
-    started_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    finished_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="running")
     products_in: Mapped[int] = mapped_column(Integer, default=0)
     products_out: Mapped[int] = mapped_column(Integer, default=0)
@@ -101,9 +93,7 @@ class UnmappedProduct(Base):
     """
 
     __tablename__ = "unmapped_products"
-    __table_args__ = (
-        Index("ix_unmapped_products_retailer", "retailer"),
-    )
+    __table_args__ = (Index("ix_unmapped_products_retailer", "retailer"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     retailer: Mapped[str] = mapped_column(String(64))
@@ -111,9 +101,7 @@ class UnmappedProduct(Base):
     source_category: Mapped[str | None] = mapped_column(Text, nullable=True)
     reason: Mapped[str] = mapped_column(String(255))
     raw_payload: Mapped[dict] = mapped_column(JsonB)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class EmbeddingCache(Base):

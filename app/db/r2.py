@@ -21,7 +21,10 @@ def get_r2_session() -> aioboto3.Session:
 async def ping_r2() -> bool:
     """Return True if the R2 bucket is accessible, False otherwise."""
     if not settings.r2_endpoint_url or not settings.r2_bucket_name:
-        logger.error("ping_r2.not_configured", message="R2 endpoint or bucket not set — check R2_ENDPOINT_URL and R2_BUCKET_NAME env vars")
+        logger.error(
+            "ping_r2.not_configured",
+            message="R2 endpoint or bucket not set — check R2_ENDPOINT_URL and R2_BUCKET_NAME env vars",
+        )
         return False
 
     try:

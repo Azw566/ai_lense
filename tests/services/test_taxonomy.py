@@ -63,10 +63,7 @@ def test_none_source_category_returns_none() -> None:
 
 def test_breadcrumb_last_segment_matching() -> None:
     # Full string is unknown but the last breadcrumb segment resolves.
-    assert (
-        default_taxonomy.map_source_category("awin", "Whatever > Nonsense > Mirrors")
-        == "mirror"
-    )
+    assert default_taxonomy.map_source_category("awin", "Whatever > Nonsense > Mirrors") == "mirror"
 
 
 def test_yolo_class_lookup() -> None:

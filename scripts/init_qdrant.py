@@ -46,10 +46,10 @@ INDEXED_PAYLOAD_FIELDS: tuple[tuple[str, qm.PayloadSchemaType], ...] = (
 
 
 def _client() -> AsyncQdrantClient:
-    kwargs: dict[str, str | None] = {"url": settings.qdrant_url}
-    if settings.qdrant_api_key:
-        kwargs["api_key"] = settings.qdrant_api_key
-    return AsyncQdrantClient(**kwargs)  # type: ignore[arg-type]
+    return AsyncQdrantClient(
+        url=settings.qdrant_url,
+        api_key=settings.qdrant_api_key or None,
+    )
 
 
 async def ensure_collection(client: AsyncQdrantClient, *, recreate: bool = False) -> None:

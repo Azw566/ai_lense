@@ -70,7 +70,7 @@ class Taxonomy:
                 raise TaxonomyError(f"{path}: category '{category}' must be a mapping")
             yolo_classes[category] = entry.get("yolo_class")
 
-            aliases = (entry.get("aliases") or {})
+            aliases = entry.get("aliases") or {}
             for retailer, source_cats in aliases.items():
                 if not isinstance(source_cats, list):
                     raise TaxonomyError(

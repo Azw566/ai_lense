@@ -5,13 +5,13 @@ import structlog.contextvars
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+from app.api.middleware import RequestIDMiddleware
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
-from app.api.middleware import RequestIDMiddleware
 from app.db.postgres import engine, ping_postgres
-from app.db.redis import init_redis, close_redis, ping_redis
-from app.db.qdrant import init_qdrant, close_qdrant, ping_qdrant
+from app.db.qdrant import close_qdrant, init_qdrant, ping_qdrant
 from app.db.r2 import ping_r2
+from app.db.redis import close_redis, init_redis, ping_redis
 
 # Configure structured logging before anything else runs.
 configure_logging()

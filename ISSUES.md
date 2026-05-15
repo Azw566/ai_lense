@@ -1,47 +1,25 @@
-# Issues — audit snapshot 2026-05-15
+# Issues — audit snapshot 2026-05-15 (updated post-P1-T6 + QA review)
 
-State of `feat/p1-t3-awin-source` after P1-T4 implementation. New code
-(`app/services/embedding.py`, `app/catalog/embed_job.py`, plus their tests)
-passes ruff, format, mypy, and pytest. Issues below are pre-existing or
-environmental — none block P1-T5, but CI on this branch is currently red.
+State of the branch after Phase 1 close (`v0.1.0-catalog`). CI gates are now
+all green locally: 105 tests pass, `ruff check`, `ruff format --check`, and
+`mypy app/` all clean.
 
-Status legend: 🔴 blocks CI · 🟡 latent bug / drift · 🟢 hygiene.
+Status legend: ✅ resolved · 🟡 latent bug / drift · 🟢 hygiene · 🔴 blocks ship.
 
 ---
 
-## 🔴 CI-blocking
+## ✅ Resolved (post-QA-review pass)
 
-### 1. `ruff check` fails — `app/main.py` import block unsorted
-- **Where**: `app/main.py:1-14` (rule `I001`)
-- **Why**: third-party (`structlog`, `fastapi`) and first-party (`app.*`) imports are interleaved instead of grouped.
-- **Fix**: `ruff check --fix app/main.py` (one-line auto-fix), then commit.
-- **Note**: pre-existing on the P0 commit `09fde9e` — likely passed at the time because the locally installed ruff was older. Current env has ruff 0.15.12; pyproject pin is `ruff>=0.4.8`.
+### 1. `ruff check` — `app/main.py` import block. ✅ Fixed.
+Auto-resolved by `ruff check --fix .`. Imports now grouped properly.
 
-### 2. `ruff format --check` reports 8 unformatted files
-- **Files**:
-  - `alembic/versions/1ea1f6a1ed9d_p1_t1_catalog_schema_products_indexing_.py`
-  - `app/api/middleware.py`
-  - `app/catalog/sources/awin.py`
-  - `app/db/models.py`
-  - `app/db/r2.py`
-  - `app/services/taxonomy.py`
-  - `tests/services/test_taxonomy.py`
-  - `tests/test_smoke.py`
-- **Why**: again pre-existing; current ruff format rules tightened since baseline.
-- **Fix**: `ruff format <files>`. Pure cosmetic diff — no behavior change.
+### 2. `ruff format --check` — 8 unformatted files. ✅ Fixed.
+Auto-resolved by `ruff format .`. Cosmetic diff only, no behavior change.
 
-### 3. `mypy app/` reports 13 errors in 3 files
-- **`app/db/qdrant.py:26`** — 7 errors from `AsyncQdrantClient(**kwargs)` where `kwargs: dict[str, str]`. The client accepts heterogeneous kwarg types (`int | bool | dict | Callable`), so a `dict[str, str]` unpack is type-unsafe. **Fix**: build the client with explicit kwargs:
-  ```python
-  _qdrant_client = AsyncQdrantClient(
-      url=settings.qdrant_url,
-      api_key=settings.qdrant_api_key or None,
-  )
-  ```
-- **`app/db/redis.py:8,11,18`** — three `# type: ignore[type-arg]` comments are now unused because newer `redis` stubs make `aioredis.Redis` non-generic. **Fix**: drop the three ignores.
-- **`app/db/redis.py:46`** — `await client.ping()` flagged because `ping()` is typed as `Awaitable[bool] | bool` in current stubs. **Fix**: `result = client.ping(); result = await result if hasattr(result, "__await__") else result` — or, simpler, cast: `result = await client.ping()  # type: ignore[misc]` (the runtime returns an awaitable on async clients).
-- **`app/api/middleware.py:37`** — unused `# type: ignore[type-arg]` on `send_with_header(message: dict)`.
-- **`app/api/middleware.py:47`** — ASGI scope/message types don't satisfy starlette's `MutableMapping[str, Any]` parameter. **Fix**: change `send_with_header(message: dict)` to `send_with_header(message: Message)` (import `Message` from `starlette.types`).
+### 3. `mypy app/` — 13 errors across 3 files. ✅ Fixed.
+- `app/db/qdrant.py` — `AsyncQdrantClient(**kwargs)` replaced with explicit kwargs (mirrors `scripts/init_qdrant.py`).
+- `app/db/redis.py` — three stale `# type: ignore[type-arg]` removed; `ping()` return narrowed via `# type: ignore[misc]`.
+- `app/api/middleware.py` — `send_with_header(message: dict)` switched to `Message` from `starlette.types`.
 
 ---
 
@@ -91,11 +69,18 @@ Status legend: 🔴 blocks CI · 🟡 latent bug / drift · 🟢 hygiene.
 
 ## Quick triage order
 
-1. Run `ruff check --fix . && ruff format .` → resolves issues 1 + 2 in one commit. Diff is mechanical.
-2. Apply the four explicit fixes in `app/db/qdrant.py`, `app/db/redis.py`, `app/api/middleware.py` → resolves issue 3.
+1. ~~Run `ruff check --fix . && ruff format .`~~ → done.
+2. ~~Apply the explicit fixes in `app/db/qdrant.py`, `app/db/redis.py`, `app/api/middleware.py`~~ → done.
 3. Recreate `.venv` on Python 3.12 → resolves issue 4 and lets mypy see the right stubs.
-4. Issues 5–13 can roll into a "tooling hygiene" PR after P1-T5/T6 land.
+4. Issues 5–13 can roll into a "tooling hygiene" PR after Phase 2 starts.
 
-## Out of scope but called out
+## 🔴 Blocks ship — deployment
 
-- **Deployment** (Railway + Qdrant Cloud + R2) still blocked per `CLAUDE.md` §"What is NOT done". P0-T4 code is committed but never exercised against the real services. Worth flagging again before P1-T6 because P1-T6's "done when" checks (`indexing_runs` row, Qdrant Cloud UI spot-check) need the deploy to mean anything.
+**Railway + Qdrant Cloud + R2 deploy is still open** per `CLAUDE.md` §"What is NOT done". P0-T4 + Phase 1 code is committed and tested in-memory but **never exercised against the real services**. The QA review (Phase 1) called this out as the top risk to ship date:
+
+- P1-T6 "Done when" needs an `indexing_runs` row on real Postgres + a Qdrant Cloud UI spot-check — neither performed.
+- The Postgres dialect branches in `app/catalog/ingest.py` (`ON CONFLICT DO UPDATE`) and `app/catalog/embed_job.py` (`ON CONFLICT DO NOTHING`) are **completely untested in production dialect** — tests only hit the SQLite fallback.
+- The Qdrant `filter+ANN` payload-index claim is untested — local Qdrant ignores indexes (warning at runtime).
+- The live CLIP forward pass is silently skipped on CI when weights aren't cached (`tests/services/test_embedding.py::test_embed_pil_images_returns_l2_normalized_512d`).
+
+Until these are run end-to-end against the real stack, Phase 2 should not start.

@@ -252,9 +252,7 @@ class AwinSource(ProductSource):
                 continue
             yield row
 
-    def _row_to_product(
-        self, row: dict[str, str], since: datetime | None
-    ) -> RawProduct | None:
+    def _row_to_product(self, row: dict[str, str], since: datetime | None) -> RawProduct | None:
         """Normalize one CSV row. Returns None for rows that should be skipped."""
         product_id = _first(row, _ID_COLUMNS)
         title = _first(row, _TITLE_COLUMNS)

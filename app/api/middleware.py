@@ -3,7 +3,7 @@ import uuid
 import structlog
 import structlog.contextvars
 from starlette.requests import Request
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.core.config import settings
 
@@ -34,12 +34,10 @@ class RequestIDMiddleware:
         structlog.contextvars.clear_contextvars()
         structlog.contextvars.bind_contextvars(request_id=request_id)
 
-        async def send_with_header(message: dict) -> None:  # type: ignore[type-arg]
+        async def send_with_header(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
-                headers.append(
-                    (self.header.lower().encode(), request_id.encode())
-                )
+                headers.append((self.header.lower().encode(), request_id.encode()))
                 message = {**message, "headers": headers}
             await send(message)
 

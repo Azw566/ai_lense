@@ -5,17 +5,17 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-_redis_client: aioredis.Redis | None = None  # type: ignore[type-arg]
+_redis_client: aioredis.Redis | None = None
 
 
-def get_redis() -> aioredis.Redis:  # type: ignore[type-arg]
+def get_redis() -> aioredis.Redis:
     """Return the global Redis client. Raises RuntimeError if not yet initialised."""
     if _redis_client is None:
         raise RuntimeError("Redis client has not been initialised. Call init_redis() first.")
     return _redis_client
 
 
-async def init_redis() -> aioredis.Redis:  # type: ignore[type-arg]
+async def init_redis() -> aioredis.Redis:
     """Create a Redis connection pool and store it as the global client."""
     global _redis_client  # noqa: PLW0603
 
@@ -43,7 +43,10 @@ async def ping_redis() -> bool:
     """Return True if Redis is reachable, False otherwise."""
     try:
         client = get_redis()
-        result = await client.ping()
+        # `Redis.ping()` is typed `Awaitable[bool] | bool` because the same
+        # class powers sync and async clients; on the async client it always
+        # returns an awaitable. Cast to keep mypy happy without runtime cost.
+        result: bool = await client.ping()  # type: ignore[misc]
         return bool(result)
     except Exception as exc:  # noqa: BLE001
         logger.warning("ping_redis.failed", error=str(exc))

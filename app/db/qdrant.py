@@ -19,11 +19,13 @@ async def init_qdrant() -> AsyncQdrantClient:
     """Create an async Qdrant client and store it as the global singleton."""
     global _qdrant_client  # noqa: PLW0603
 
-    kwargs: dict[str, str] = {"url": settings.qdrant_url}
-    if settings.qdrant_api_key:
-        kwargs["api_key"] = settings.qdrant_api_key
-
-    _qdrant_client = AsyncQdrantClient(**kwargs)
+    # Explicit kwargs (rather than `**dict`) so mypy sees the per-arg types —
+    # the client accepts heterogeneous kwargs (int/bool/dict/Callable) and a
+    # `dict[str, str]` unpack is type-unsafe.
+    _qdrant_client = AsyncQdrantClient(
+        url=settings.qdrant_url,
+        api_key=settings.qdrant_api_key or None,
+    )
     logger.info("qdrant.initialised", url=settings.qdrant_url)
     return _qdrant_client
 
